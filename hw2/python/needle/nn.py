@@ -88,12 +88,13 @@ class Linear(Module):
         self.out_features = out_features
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = init.kaiming_uniform(in_features, out_features)
+        self.bias = init.kaiming_uniform(out_features, 1)
         ### END YOUR SOLUTION
 
     def forward(self, X: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return ops.matmul(X , ops.transpose(self.weight)) + self.bias
         ### END YOUR SOLUTION
 
 
