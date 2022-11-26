@@ -1,5 +1,5 @@
-"""Operatpr table."""
-# Global operator table.
+"""Operator implementations."""
+
 from numbers import Number
 from typing import Optional, List
 from .autograd import NDArray
@@ -7,8 +7,8 @@ from .autograd import Op, Tensor, Value, TensorOp
 from .autograd import TensorTuple, TensorTupleOp
 import numpy
 
-# NOTE: we will numpy as the array_api
-# to backup our computations, this line will change in later homeworks
+# NOTE: we will import numpy as the array_api
+# as the backend for our computations, this line will change in later homeworks
 import numpy as array_api
 
 
@@ -187,7 +187,7 @@ def divide_scalar(a, scalar):
 
 class Transpose(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
-        self.axes = axes
+        self.axes = axes if axes is not None else (-1,-2)
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
@@ -380,7 +380,8 @@ class LogSumExp(TensorOp):
 
     def compute(self, Z):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        m = array_api.amax(Z, self.axes, keepdims=True)
+        return log(summation(exp(Z - m), self.axes)) + m
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
