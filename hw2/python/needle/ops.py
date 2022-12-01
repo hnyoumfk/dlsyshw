@@ -381,12 +381,21 @@ class LogSumExp(TensorOp):
     def compute(self, Z):
         ### BEGIN YOUR SOLUTION
         m = array_api.amax(Z, self.axes, keepdims=True)
-        return log(summation(exp(Z - m), self.axes)) + m
+        ret = array_api.log(array_api.sum(array_api.exp(Z - m), self.axes))
+        ret += m.reshape(ret.shape)
+        return ret
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        Z = node.inputs[0].cached_data
+        m = array_api.amax(Z, self.axes, keepdims=True)
+        e = array_api.exp(Z - m)
+        s = array_api.sum(e, self.axes)
+
+        ret = ( out_grad.cached_data / s ).reshape(m.shape) * e
+
+        return Tensor(ret)
         ### END YOUR SOLUTION
 
 
