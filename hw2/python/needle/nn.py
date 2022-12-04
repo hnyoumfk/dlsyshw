@@ -166,18 +166,18 @@ class LayerNorm1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        d = len(x.shape) - 1 
-        sum_shape = list(x.shape)
-        sum_shape[d] = 1
-        sum_shape = tuple(sum_shape)
-        e = ops.reshape(ops.summation(x, (d,)) / self.dim , sum_shape)
+        x = ops.transpose(x)
+        e = ops.broadcast_to(ops.summation(x, (0,)) / self.dim, x.shape)
         sub_x = x - e
-        print(sub_x)
-        var = ops.reshape(ops.summation( ops.power_scalar(sub_x, 2), (d,) ) / self.dim , sum_shape)
-        print(var)
-        ret = self.weight * (sub_x / ops.power_scalar(var+self.eps, 0.5)) + self.bias
+        print("x: "+ str(x))
+        print("e: "+ str(e))
+        print("sub_x: " + str(sub_x))
+        print("______________")
+        var = ops.broadcast_to(ops.summation( ops.power_scalar(sub_x, 2), (0,) ) / self.dim , x.shape)
+        ret = self.weight * ops.transpose(sub_x / ops.power_scalar(var+self.eps, 0.5)) + self.bias
         return ret
         ### END YOUR SOLUTION
+
 
 
 class Dropout(Module):
