@@ -99,10 +99,13 @@ class Linear(Module):
 
 
 
+from functools import reduce
 class Flatten(Module):
     def forward(self, X):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        old_shape = X.shape
+        new_shape = (old_shape[0], reduce(lambda x,y: x*y , old_shape[1:]))
+        return ops.reshape(X, new_shape)
         ### END YOUR SOLUTION
 
 
