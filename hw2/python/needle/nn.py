@@ -154,8 +154,8 @@ class BatchNorm1d(Module):
         ### BEGIN YOUR SOLUTION
         self.weight = Parameter(init.ones(self.dim, device=device))
         self.bias = Parameter(init.zeros(self.dim, device=device))
-        self.running_mean = Parameter(init.zeros(self.dim, device=device))
-        self.running_var = Parameter(init.ones(self.dim, device=device))
+        self.running_mean = init.zeros(self.dim, device=device)
+        self.running_var = init.ones(self.dim, device=device)
         ### END YOUR SOLUTION
 
 
@@ -166,13 +166,15 @@ class BatchNorm1d(Module):
             sub_x = x - ops.broadcast_to(e, x.shape)
             var = ops.summation( ops.power_scalar(sub_x, 2), (0,) ) / x.shape[0]
             broadcast_var = ops.broadcast_to(var, x.shape)
-            ret = self.weight * (sub_x / ops.power_scalar(broadcast_var+self.eps, 0.5)) + self.bias
+            broadcast_weight = ops.broadcast_to(self.weight, x.shape) 
+            broadcast_bias = ops.broadcast_to(self.bias, x.shape)
+            ret = broadcast_weight * (sub_x / ops.power_scalar(broadcast_var+self.eps, 0.5)) + broadcast_bias
 
             self.running_mean = self.running_mean * (1-self.momentum) + self.momentum * e  
             self.running_var = self.running_var * (1-self.momentum) + self.momentum * var
             return ret
         else :
-            y = ( x - self.running_mean ) * (self.running_var + self.eps) ** -0.5
+            y = self.weight * ( x - self.running_mean ) * (self.running_var + self.eps) ** -0.5 + self.bias
             return y
         ### END YOUR SOLUTION
 
@@ -192,12 +194,10 @@ class LayerNorm1d(Module):
         x = ops.transpose(x)
         e = ops.broadcast_to(ops.summation(x, (0,)) / self.dim, x.shape)
         sub_x = x - e
-        print("x: "+ str(x))
-        print("e: "+ str(e))
-        print("sub_x: " + str(sub_x))
-        print("______________")
         var = ops.broadcast_to(ops.summation( ops.power_scalar(sub_x, 2), (0,) ) / self.dim , x.shape)
-        ret = self.weight * ops.transpose(sub_x / ops.power_scalar(var+self.eps, 0.5)) + self.bias
+        broadcast_weight = ops.broadcast_to(self.weight, x.shape) 
+        broadcast_bias = ops.broadcast_to(self.bias, x.shape)
+        ret = broadcast_weight * ops.transpose(sub_x / ops.power_scalar(var+self.eps, 0.5)) + broadcast_bias
         return ret
         ### END YOUR SOLUTION
 
