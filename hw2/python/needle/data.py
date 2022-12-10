@@ -45,7 +45,18 @@ class RandomCrop(Transform):
         """
         shift_x, shift_y = np.random.randint(low=-self.padding, high=self.padding+1, size=2)
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        ret = np.roll(img, (-shift_x, -shift_y) , (0,1))
+
+        X = img.shape[0]
+        Y = img.shape[1]
+
+        arange_x = np.arange(X-shift_x,X) if shift_x > 0 else np.arange(0-shift_x)
+        arange_y = np.arange(Y-shift_y,Y) if shift_y > 0 else np.arange(0-shift_y)
+
+        ret[arange_x[:X] , : , :] = 0
+        ret[: , arange_y[:Y] , :] = 0
+
+        return ret
         ### END YOUR SOLUTION
 
 
