@@ -124,7 +124,7 @@ class DataLoader:
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
-
+import gzip
 class MNISTDataset(Dataset):
     def __init__(
         self,
@@ -133,18 +133,58 @@ class MNISTDataset(Dataset):
         transforms: Optional[List] = None,
     ):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        print(image_filename)
+        print(label_filename)
+        self.imgs , self.labels = self.parse_mnist(image_filename, label_filename)
+        self.transforms = transforms
         ### END YOUR SOLUTION
 
     def __getitem__(self, index) -> object:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        img , label = (self.imgs[index], self.labels[index])
+        if self.transforms:
+            for t in self.transforms:
+                img = t(img)
+        return (img, label)
         ### END YOUR SOLUTION
 
     def __len__(self) -> int:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return len(self.labels)
         ### END YOUR SOLUTION
+
+    def parse_mnist(self, image_filename, label_filename):
+        """ Read an images and labels file in MNIST format.  See this page:
+        http://yann.lecun.com/exdb/mnist/ for a description of the file format.
+        Args:
+            image_filename (str): name of gzipped images file in MNIST format
+            label_filename (str): name of gzipped labels file in MNIST format
+        Returns:
+            Tuple (X,y):
+                X (numpy.ndarray[np.float32]): 4D numpy array containing the loaded 
+                    data.  The dimensionality of the data should be 
+                    (num_examples x H x W x C) where 'input_dim' is the full 
+                    dimension of the data, e.g., since MNIST images are 28x28, it 
+                    will be 28x28x1.  Values should be of type np.float32, and the data 
+                    should be normalized to have a minimum value of 0.0 and a 
+                    maximum value of 1.0. The normalization should be applied uniformly
+                    across the whole dataset, _not_ individual images.
+                y (numpy.ndarray[dtype=np.uint8]): 1D numpy array containing the
+                    labels of the examples.  Values should be of type np.uint8 and
+                    for MNIST will contain the values 0-9.
+        """
+        ### BEGIN YOUR CODE
+        with gzip.open(image_filename) as image_file:
+          pixels = np.frombuffer(image_file.read(), 'B', offset=16)
+        images = pixels.reshape(-1, 28, 28 ,1).astype('float32') / 255
+
+        with gzip.open(label_filename) as f:
+          # First 8 bytes are magic_number, n_labels
+          integer_labels = np.frombuffer(f.read(), 'B', offset=8)
+        labels = integer_labels.astype('uint8')
+
+        return (images, labels)
+        ### END YOUR CODE
 
 class NDArrayDataset(Dataset):
     def __init__(self, *arrays):
