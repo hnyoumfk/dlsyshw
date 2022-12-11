@@ -115,13 +115,21 @@ class DataLoader:
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.shuffle:
+            r = np.arange(len(self.dataset))
+            np.random.shuffle(r)
+            self.ordering = np.array_split(r, range(self.batch_size, len(self.dataset), self.batch_size))
+        self.n = 0
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.n >= len(self.ordering):
+            raise StopIteration()
+        samples = self.dataset[self.ordering[self.n]]
+        self.n += 1
+        return [Tensor(x) for x in samples]
         ### END YOUR SOLUTION
 
 import gzip
