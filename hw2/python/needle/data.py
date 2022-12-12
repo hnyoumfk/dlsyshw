@@ -141,8 +141,6 @@ class MNISTDataset(Dataset):
         transforms: Optional[List] = None,
     ):
         ### BEGIN YOUR SOLUTION
-        print(image_filename)
-        print(label_filename)
         self.imgs , self.labels = self.parse_mnist(image_filename, label_filename)
         self.transforms = transforms
         ### END YOUR SOLUTION

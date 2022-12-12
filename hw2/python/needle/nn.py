@@ -185,8 +185,8 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        self.weight = Parameter(init.ones(dim, device=device))
-        self.bias = Parameter(init.zeros(dim, device=device))
+        self.weight = Parameter(init.ones(1, dim, device=device))
+        self.bias = Parameter(init.zeros(1, dim, device=device))
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
@@ -195,9 +195,10 @@ class LayerNorm1d(Module):
         e = ops.broadcast_to(ops.summation(x, (0,)) / self.dim, x.shape)
         sub_x = x - e
         var = ops.broadcast_to(ops.summation( ops.power_scalar(sub_x, 2), (0,) ) / self.dim , x.shape)
-        broadcast_weight = ops.broadcast_to(self.weight, x.shape) 
-        broadcast_bias = ops.broadcast_to(self.bias, x.shape)
-        ret = broadcast_weight * ops.transpose(sub_x / ops.power_scalar(var+self.eps, 0.5)) + broadcast_bias
+        result = ops.transpose(sub_x / ops.power_scalar(var+self.eps, 0.5))
+        broadcast_weight = ops.broadcast_to(self.weight, result.shape) 
+        broadcast_bias = ops.broadcast_to(self.bias, result.shape)
+        ret = broadcast_weight * result  + broadcast_bias
         return ret
         ### END YOUR SOLUTION
 
@@ -211,7 +212,7 @@ class Dropout(Module):
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
         if self.training :
-            drop = init.randb(*(x.shape), p=self.p) / (1 - self.p)
+            drop = init.randb(*(x.shape), p=1-self.p) / (1-self.p)
             return x * drop
         return x
         ### END YOUR SOLUTION
@@ -224,7 +225,8 @@ class Residual(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        return self.fn(x) + x
+        ret = self.fn(x)
+        return ret + x
         ### END YOUR SOLUTION
 
 
