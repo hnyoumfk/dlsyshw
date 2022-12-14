@@ -241,7 +241,16 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if not self.is_compact():
+            raise ValueError()
+
+        if prod(new_shape) != prod(self._shape):
+            raise ValueError()
+
+        # self._shape = new_shape
+        # self._strides = NDArray.compact_strides(new_shape) 
+        
+        return NDArray.make(new_shape, device=self._device, handle=self._handle, offset=self._offset)
         ### END YOUR SOLUTION
 
     def permute(self, new_axes):
@@ -264,7 +273,18 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_shape_list = []
+        new_stride_list = []
+        for a in new_axes :
+            new_shape_list.append(self._shape[a])
+            new_stride_list.append(self._strides[a])
+
+        new_shape = tuple(new_shape_list)
+        new_stride = tuple(new_stride_list)
+
+        # self._strides = NDArray.compact_strides(new_shape) 
+        
+        return NDArray.make(new_shape, new_stride, device=self._device, handle=self._handle, offset=self._offset)
         ### END YOUR SOLUTION
 
     def broadcast_to(self, new_shape):
