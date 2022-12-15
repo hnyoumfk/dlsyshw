@@ -247,9 +247,6 @@ class NDArray:
         if prod(new_shape) != prod(self._shape):
             raise ValueError()
 
-        # self._shape = new_shape
-        # self._strides = NDArray.compact_strides(new_shape) 
-        
         return NDArray.make(new_shape, device=self._device, handle=self._handle, offset=self._offset)
         ### END YOUR SOLUTION
 
@@ -305,7 +302,21 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for i in range(len(self._shape)):
+            if self._shape[i]!=1:
+                assert self._shape[i]==new_shape[i] , "new_shape's elements must be the same as the original shape"
+
+
+        new_stride_list = []
+        for i in range(len(self._shape)):
+            if self._shape[i] != 1 :
+                new_stride_list.append(self._strides[i])
+            else :
+                new_stride_list.append(0)
+
+        new_stride = tuple(new_stride_list)
+
+        return NDArray.make(new_shape, new_stride, device=self._device, handle=self._handle, offset=self._offset)
         ### END YOUR SOLUTION
 
     ### Get and set elements
@@ -368,7 +379,20 @@ class NDArray:
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_shape_list = []
+        new_stride_list = []
+        new_offset = self._offset
+        for i in range(len(idxs)):
+            idx = idxs[i]
+            start, stop, step = idx.start, idx.stop, idx.step
+            new_offset += self._strides[i] * start
+            new_stride_list.append(self._strides[i] * step)
+            new_shape_list.append((stop - start) // step)
+
+        new_shape = tuple(new_shape_list)
+        new_stride = tuple(new_stride_list)
+
+        return NDArray.make(new_shape, new_stride, device=self._device, handle=self._handle, offset=new_offset)
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs, other):
