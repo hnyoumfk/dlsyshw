@@ -44,6 +44,42 @@ void Fill(AlignedArray* out, scalar_t val) {
 }
 
 
+scalar_t* getItem(AlignedArray* a, std::vector<uint32_t> axes_index, std::vector<uint32_t> strides, size_t offset) {
+  /**
+   * Get an item addr from a non-compact array 
+   * 
+   * Args:
+   *   a: non-compact representation of the array
+   *   axes_index: all axes index of the item to get
+   *   strides: strides of the *a* array 
+   *   offset: offset of the *a* array 
+  */
+    size_t in_index = offset;
+    for(int ai=0; ai<axes_size; ai++) {
+      in_index += axes_index[ai] * strides[ai];
+    }
+    return &a.ptr[in_index]
+}
+
+void nextIndex(std::vector<uint32_t> axes_index, std::vector<uint32_t> shape) {
+  /**
+   * Update axes_index to get next item in the array with shape
+   * 
+   * Args:
+   *   axes_index: all axes index of the item to get
+   *   shape: shapes of each dimension for THE array
+  */
+  int axes_size = shape.size();
+
+  axes_index[axes_size-1] += 1;
+  for(int ai=axes_size-1; ai>0; ai--) {
+    if(axes_index[ai] >= shape[ai]) {
+      axes_index[ai] = 0;
+      axes_index[ai-1] += 1;
+    }
+  }
+
+}
 
 
 void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> shape,
@@ -63,7 +99,27 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> sha
    *  function will implement here, so we won't repeat this note.)
    */
   /// BEGIN YOUR SOLUTION
-  
+  uint32_t axes_size = shape.size();
+  uint32_t axes_index[axes_size] = {0};
+
+  for(int i=0; i<out.size; i++) {
+    // get input index
+    size_t in_index = offset;
+    for(int ai=0; ai<axes_size; ai++) {
+      in_index += axes_index[ai] * strides[ai];
+    }
+    // copy val
+    out.ptr[i] = a.ptr[in_index];
+    // iter step
+    axes_index[axes_size-1] += 1;
+    for(int ai=axes_size-1; ai>0; ai--) {
+      if(axes_index[ai] >= shape[ai]) {
+        axes_index[ai] = 0;
+        axes_index[ai-1] += 1;
+      }
+    }
+
+  }
   /// END YOUR SOLUTION
 }
 
