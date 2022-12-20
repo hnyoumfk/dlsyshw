@@ -44,7 +44,7 @@ void Fill(AlignedArray* out, scalar_t val) {
 }
 
 
-scalar_t* getItem(AlignedArray* a, std::vector<uint32_t> axes_index, std::vector<uint32_t> strides, size_t offset) {
+scalar_t* GetItem(const AlignedArray& a, std::vector<uint32_t> axes_index, std::vector<uint32_t> strides, size_t offset) {
   /**
    * Get an item addr from a non-compact array 
    * 
@@ -55,13 +55,14 @@ scalar_t* getItem(AlignedArray* a, std::vector<uint32_t> axes_index, std::vector
    *   offset: offset of the *a* array 
   */
     size_t in_index = offset;
+    int axes_size = axes_index.size();
     for(int ai=0; ai<axes_size; ai++) {
       in_index += axes_index[ai] * strides[ai];
     }
-    return &a.ptr[in_index]
+    return &a.ptr[in_index];
 }
 
-void nextIndex(std::vector<uint32_t> axes_index, std::vector<uint32_t> shape) {
+void UpdateAxesIndex(std::vector<uint32_t>& axes_index, std::vector<uint32_t> shape) {
   /**
    * Update axes_index to get next item in the array with shape
    * 
@@ -100,25 +101,14 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> sha
    */
   /// BEGIN YOUR SOLUTION
   uint32_t axes_size = shape.size();
-  uint32_t axes_index[axes_size] = {0};
+  std::vector<uint32_t> axes_index(axes_size);
+  int total_size = out->size;
 
-  for(int i=0; i<out.size; i++) {
-    // get input index
-    size_t in_index = offset;
-    for(int ai=0; ai<axes_size; ai++) {
-      in_index += axes_index[ai] * strides[ai];
-    }
+  for(int i=0; i<total_size; i++) {
     // copy val
-    out.ptr[i] = a.ptr[in_index];
+    out->ptr[i] = *GetItem(a, axes_index, strides, offset);
     // iter step
-    axes_index[axes_size-1] += 1;
-    for(int ai=axes_size-1; ai>0; ai--) {
-      if(axes_index[ai] >= shape[ai]) {
-        axes_index[ai] = 0;
-        axes_index[ai-1] += 1;
-      }
-    }
-
+    UpdateAxesIndex(axes_index, shape);
   }
   /// END YOUR SOLUTION
 }
@@ -136,7 +126,16 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN YOUR SOLUTION
-  
+  uint32_t axes_size = shape.size();
+  std::vector<uint32_t> axes_index(axes_size);
+  int total_size = a.size;
+
+  for(int i=0; i<total_size; i++) {
+    // copy val
+    *GetItem(*out, axes_index, strides, offset) = a.ptr[i];
+    // iter step
+    UpdateAxesIndex(axes_index, shape);
+  }
   /// END YOUR SOLUTION
 }
 
@@ -157,6 +156,16 @@ void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vect
    */
 
   /// BEGIN YOUR SOLUTION
+  uint32_t axes_size = shape.size();
+  std::vector<uint32_t> axes_index(axes_size);
+  int total_size = size;
+
+  for(int i=0; i<total_size; i++) {
+    // copy val
+    *GetItem(*out, axes_index, strides, offset) = val;
+    // iter step
+    UpdateAxesIndex(axes_index, shape);
+  }
   
   /// END YOUR SOLUTION
 }

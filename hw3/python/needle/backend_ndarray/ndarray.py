@@ -387,7 +387,7 @@ class NDArray:
             start, stop, step = idx.start, idx.stop, idx.step
             new_offset += self._strides[i] * start
             new_stride_list.append(self._strides[i] * step)
-            new_shape_list.append((stop - start) // step)
+            new_shape_list.append((stop - start + step - 1) // step)
 
         new_shape = tuple(new_shape_list)
         new_stride = tuple(new_stride_list)
