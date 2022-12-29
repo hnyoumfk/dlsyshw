@@ -89,6 +89,7 @@ def test_reduce_sum(params, device):
     dims, axis = params['dims'], params['axis']
     _A = np.random.randn(*dims)
     A = nd.array(_A, device=device)   
+    print(_A)
     np.testing.assert_allclose(_A.sum(axis=axis, keepdims=True), A.sum(axis=axis).numpy(), atol=1e-5, rtol=1e-5)
 
 
