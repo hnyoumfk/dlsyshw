@@ -3,3 +3,6 @@ __pycache__/
 
 *.swp
 hw3/.vscode/settings.json
+
+build/
+*.so
