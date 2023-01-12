@@ -93,13 +93,28 @@ __global__ void CompactKernel(const scalar_t* a, scalar_t* out, size_t size, Cud
    *   out: CUDA point to out array
    *   size: size of out array
    *   shape: vector of shapes of a and out arrays (of type CudaVec, for past passing to CUDA kernel)
-   *   strides: vector of strides of out array
+   *   strides: vector of strides of out array ???
    *   offset: offset of out array
    */
   size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
 
   /// BEGIN YOUR SOLUTION
-  
+  size_t cur_stride = 1;
+  size_t axes_size = shape.size;
+  for(int i=0; i<axes_size; i++) {
+    cur_stride *= shape.data[i];
+  }
+
+  size_t a_index = offset;
+  size_t left = gid;
+  for(int i=0;i<axes_size; i++) {
+    cur_stride /= shape.data[i];
+    int index = left / cur_stride;
+    left -= cur_stride * index;
+    a_index += index * strides.data[i];
+  }
+
+  out[gid] = a[a_index];
   /// END YOUR SOLUTION
 }
 
