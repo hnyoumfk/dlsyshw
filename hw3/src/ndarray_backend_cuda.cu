@@ -1,3 +1,4 @@
+// https://colab.research.google.com/drive/1jOTO-CrbayVXZRsVpZoETvOw5XOjo-TG#scrollTo=480d127f
 #include <cuda_runtime.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -142,6 +143,39 @@ void Compact(const CudaArray& a, CudaArray* out, std::vector<uint32_t> shape,
 }
 
 
+__global__ void EwiseSetitemKernel(const scalar_t* a, scalar_t* out, size_t size, CudaVec shape,
+                              CudaVec strides, size_t offset) {
+  /**
+   * The CUDA kernel for the element-wise set item opeation.  
+   * 
+   * Args:
+   *   a: CUDA pointer to a array, _compact_ array whose items will be written to out
+   *   out: CUDA point to out array, non-compact array whose items are to be written
+   *   size: size of out array
+   *   shape: vector of shapes of a and out arrays (of type CudaVec, for past passing to CUDA kernel)
+   *   strides: vector of strides of out array 
+   *   offset: offset of out array
+   */
+  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+  
+  size_t cur_stride = 1;
+  for(int i=0; i<shape.size; i++) {
+    cur_stride *= shape.data[i];
+  }
+
+  size_t a_index = gid;
+  size_t out_index = offset;
+  size_t left = a_index;
+
+  for(int i=0;i<shape.size; i++) {
+    cur_stride /= shape.data[i];
+    size_t index = left / cur_stride;
+    left -= cur_stride * index;
+    out_index += index * strides.data[i];
+  }
+
+  out[out_index] = a[a_index];
+}
 
 
 void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<uint32_t> shape,
@@ -158,11 +192,46 @@ void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<uint32_t> shap
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN YOUR SOLUTION
-  
+  CudaDims dim = CudaOneDim(out->size);
+  EwiseSetitemKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size, VecToCuda(shape),
+                                         VecToCuda(strides), offset);
   /// END YOUR SOLUTION
 }
 
 
+__global__ void EwiseSetitemKernel(scalar_t* out, size_t size, CudaVec shape,
+                              CudaVec strides, size_t offset) {
+  /**
+   * The CUDA kernel for the compact opeation.  This should effectively map a single entry in the 
+   * non-compact input a, to the corresponding item (at location gid) in the compact array out.
+   * 
+   * Args:
+   *   out: non-compact array whose items are to be written
+   *   shape: shapes of each dimension for a and out
+   *   strides: strides of the *out* array (not a, which has compact strides)
+   *   offset: offset of the *out* array (not a, which has zero offset, being compact)
+   */
+
+  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+  
+  size_t cur_stride = 1;
+  for(int i=0; i<shape.size; i++) {
+    cur_stride *= shape.data[i];
+  }
+
+  size_t a_index = gid;
+  size_t out_index = offset;
+  size_t left = a_index;
+
+  for(int i=0;i<shape.size; i++) {
+    cur_stride /= shape.data[i];
+    size_t index = left / cur_stride;
+    left -= cur_stride * index;
+    out_index += index * strides.data[i];
+  }
+
+  out[out_index] = a[a_index];
+}
 
 
 void ScalarSetitem(size_t size, scalar_t val, CudaArray* out, std::vector<uint32_t> shape,
