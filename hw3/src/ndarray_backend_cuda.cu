@@ -105,6 +105,9 @@ __global__ void CompactKernel(const scalar_t* a, scalar_t* out, size_t size, Cud
   for(int i=0; i<axes_size; i++) {
     cur_stride *= shape.data[i];
   }
+  if(gid >= cur_stride) {
+    return ;
+  }
 
   size_t a_index = offset;
   size_t left = gid;
@@ -163,6 +166,10 @@ __global__ void EwiseSetitemKernel(const scalar_t* a, scalar_t* out, size_t size
     cur_stride *= shape.data[i];
   }
 
+  if(gid >= cur_stride) {
+    return ;
+  }
+
   size_t a_index = gid;
   size_t out_index = offset;
   size_t left = a_index;
@@ -199,13 +206,17 @@ void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<uint32_t> shap
 }
 
 
-__global__ void EwiseSetitemKernel(scalar_t* out, size_t size, CudaVec shape,
+__global__ void ScalarSetitemKernel(size_t size, scalar_t val, scalar_t* out, CudaVec shape,
                               CudaVec strides, size_t offset) {
   /**
    * The CUDA kernel for the compact opeation.  This should effectively map a single entry in the 
    * non-compact input a, to the corresponding item (at location gid) in the compact array out.
    * 
    * Args:
+   *   size: number of elements to write in out array (note that this will note be the same as
+   *         out.size, because out is a non-compact subset array);  it _will_ be the same as the 
+   *         product of items in shape, but covenient to just pass it here.
+   *   val: scalar value to write to
    *   out: non-compact array whose items are to be written
    *   shape: shapes of each dimension for a and out
    *   strides: strides of the *out* array (not a, which has compact strides)
@@ -213,15 +224,17 @@ __global__ void EwiseSetitemKernel(scalar_t* out, size_t size, CudaVec shape,
    */
 
   size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+  if(gid >= size) {
+    return ;
+  }
   
   size_t cur_stride = 1;
   for(int i=0; i<shape.size; i++) {
     cur_stride *= shape.data[i];
   }
 
-  size_t a_index = gid;
   size_t out_index = offset;
-  size_t left = a_index;
+  size_t left = gid;
 
   for(int i=0;i<shape.size; i++) {
     cur_stride /= shape.data[i];
@@ -230,7 +243,7 @@ __global__ void EwiseSetitemKernel(scalar_t* out, size_t size, CudaVec shape,
     out_index += index * strides.data[i];
   }
 
-  out[out_index] = a[a_index];
+  out[out_index] = val;
 }
 
 
@@ -250,7 +263,9 @@ void ScalarSetitem(size_t size, scalar_t val, CudaArray* out, std::vector<uint32
    *   offset: offset of the out array
    */
   /// BEGIN YOUR SOLUTION
-  
+  CudaDims dim = CudaOneDim(out->size);
+  ScalarSetitemKernel<<<dim.grid, dim.block>>>(size, val, out->ptr, VecToCuda(shape),
+                                         VecToCuda(strides), offset);
   /// END YOUR SOLUTION
 }
 
